@@ -3,6 +3,7 @@
 #include "scope.h"
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 static long eval_expr(Ast* e, Scope* s);
 
@@ -81,8 +82,19 @@ static long eval_expr(Ast* e, Scope* s){
                 case OP_ADD: return A+B;
                 case OP_SUB: return A-B;
                 case OP_MUL: return A*B;
-                case OP_DIV: return B? A/B : 0;
-                case OP_MOD: return B? A%B : 0;
+                case OP_DIV:
+                    if (B == 0) {
+                        fprintf(stderr, "Runtime error: division by zero\n");
+                        exit(1);
+                    }
+                    return A / B;
+
+                case OP_MOD:
+                    if (B == 0) {
+                        fprintf(stderr, "Runtime error: modulo by zero\n");
+                        exit(1);
+                    }
+                    return A % B;
                 case OP_LT:  return A<B;
                 case OP_GT:  return A>B;
                 case OP_LE:  return A<=B;

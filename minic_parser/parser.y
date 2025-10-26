@@ -11,7 +11,7 @@ int yylex(void);
 extern int yylineno;
 %}
 
-%define parse.error verbose
+%define parse.error "verbose"
 
 %union {
     long ival;
