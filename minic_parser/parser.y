@@ -44,8 +44,41 @@ extern int yylineno;
 
 %%
 
-program : decl_list               { root = ast_program($1); }
-        ;
+program
+    /* Класичний шлях: як і було — програма це перелік оголошень */
+    : decl_list
+        { root = ast_program($1); }
+    /* Новий шлях 1: файл — це просто вираз без крапки з комою */
+    | expr
+        {
+            /* return <expr>; */
+            Ast* ret = ast_return($1, @$.first_line, @$.first_column);
+
+            /* { return <expr>; } */
+            Ast* body = ast_make(AST_COMPOUND, @$.first_line, @$.first_column);
+            body->as.list.items = NULL; body->as.list.count = 0;
+            body = ast_list_append(body, ret);
+
+            /* int main() { ... } — без параметрів (NULL) */
+            Ast* fn = ast_func_def("main", NULL, body, @$.first_line, @$.first_column);
+
+            /* program(decl_list = [main]) */
+            Ast* decls = ast_list_append(NULL, fn);
+            root = ast_program(decls);
+        }
+    /* Новий шлях 2: файл — це вираз з крапкою з комою наприкінці */
+    | expr ';'
+        {
+            Ast* ret = ast_return($1, @$.first_line, @$.first_column);
+            Ast* body = ast_make(AST_COMPOUND, @$.first_line, @$.first_column);
+            body->as.list.items = NULL; body->as.list.count = 0;
+            body = ast_list_append(body, ret);
+
+            Ast* fn = ast_func_def("main", NULL, body, @$.first_line, @$.first_column);
+            Ast* decls = ast_list_append(NULL, fn);
+            root = ast_program(decls);
+        }
+    ;
 
 decl_list
         : decl_list decl          { $$ = ast_list_append($1, $2); }
